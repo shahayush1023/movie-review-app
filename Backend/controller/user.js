@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const { isValidObjectId } = require("mongoose");
 const {generateOTP,generateMailTransporter} = require('../utils/mail');
 const {sendError, generateRandomByte} = require('../utils/helper');
+
 exports.create = async (req, res) => {
   const { name, email, password } = req.body;
   const olduser = await User.findOne({email});
@@ -37,11 +38,15 @@ exports.create = async (req, res) => {
 
   });
 
-  res.status(201).json({ message:"please verify your email.OTP has been sent to your email"});
+  res.status(201).json({user:{
+    id:newUser._id,
+    name:newUser.name,
+    email:newUser.email,
+  }});
 };
 
 exports.verifyemail = async(req,res)=>{
-  const{userId,otp} = req.body;
+  const{userId,OTP} = req.body;
   
   if(!isValidObjectId(userId)) return res.json({error:"invalid user!"});
   
@@ -54,7 +59,7 @@ exports.verifyemail = async(req,res)=>{
   const token = await Emailverificationtoken.findOne({owner:userId});
   if(!token) return sendError(res,"token not found!");
 
-  const isMatched = await token.comparetoken(otp);
+  const isMatched = await token.comparetoken(OTP);
   if(!isMatched) return sendError(res,'please submit a valid otp')
   
   user.isVerified = true;
@@ -71,7 +76,12 @@ exports.verifyemail = async(req,res)=>{
     subject:'Welcome email',
     html:`<h1>Welcome to our app and thanks for choosing us</h1>` 
   });
-  res.json({mesaage:'your email is verified'})
+  const jwttoken = jwt.sign({userId:user._id},process.env.JWT_SECRET);
+
+  res.json({
+    user:{id:user._id,name:user.name,email:user.email,token:jwttoken,isVerified:user.isVerified} ,
+    message :'your email is verified'
+  });
 };
 
 exports.resendEmailverificationtoken = async (req,res)=>{
@@ -87,12 +97,12 @@ exports.resendEmailverificationtoken = async (req,res)=>{
   if(alreadytoken) return sendError(res,'Only after one hour you can request for another token!');
   
 
-  let otp = generateOTP();
+  let OTP = generateOTP();
 
   //store inside our db
   const newEmailVerificationtoken = new Emailverificationtoken({
     owner:user._id,
-    token:otp
+    token:OTP
   });
 
   await newEmailVerificationtoken.save(); 
@@ -104,7 +114,7 @@ exports.resendEmailverificationtoken = async (req,res)=>{
     to:user.email,
     subject:'email verification',
     html:`<p>Your verification OTP</p>
-        <h1>${otp}</h1>
+        <h1>${OTP}</h1>
     `
 
   });
@@ -126,7 +136,7 @@ const token = await generateRandomByte();
 const newPasswordresetToken = await PasswordResetToken({owner:user._id,token});
 await newPasswordresetToken.save();
 
-const resetPasswordUrl = `http://localhost:3000/reset-password?token=${token}&id=${user._id}`;
+const resetPasswordUrl = `http://localhost:3000/auth/reset-password?token=${token}&id=${user._id}`;
 const transport = generateMailTransporter();
 
   transport.sendMail({
@@ -178,9 +188,9 @@ exports.signIn = async(req,res,next)=>{
     const matched = await user.comparePassword(password);
     if(!matched) return sendError(res,'Email/Passwrod mismatch')
  
-    const{_id, name} = user
+    const{_id, name,isVerified} = user
     const jwttoken = jwt.sign({userId:user._id},process.env.JWT_SECRET)
-    res.json({user:{id:_id,name,email,token:jwttoken}});
+    res.json({user:{id:_id,name,email,token:jwttoken,isVerified}});
    }
    catch(error){
     next(error.message);

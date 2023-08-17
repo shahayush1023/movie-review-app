@@ -1,15 +1,21 @@
 const express = require('express');
 const app = express();
+const cors = require('cors');
 const morgan = require("morgan");
 const userRouter = require('./routes/user');
 const { errorHandler } = require('./middlewares/error');
+const { handleNotFound } = require('./utils/helper');
 require('express-async-errors');
 require('dotenv').config()
 require('./db');
 
 app.use(express.json());
+app.use(cors())
 app.use("/api/user",userRouter);
 app.use(morgan("dev"));
+
+app.use('/*',handleNotFound)
+
 app.use(errorHandler);
 // app.post('/sign-in',(req,res,next)=>{
 //     const{email,password} = req.body;
