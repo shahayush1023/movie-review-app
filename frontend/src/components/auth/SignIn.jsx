@@ -45,10 +45,10 @@ export default function Signin() {
     handleLogin(userInfo.email, userInfo.password);
   };
 
-  useEffect(() => {
-    // we want to move our user to somewhere else
-    if (isloggedIn) navigate("/");
-  }, [isloggedIn]);
+  // useEffect(() => {
+  //   // we want to move our user to somewhere else
+  //   if (isloggedIn) navigate("/");
+  // }, [isloggedIn]);
 
   return (
     <FormContainer>

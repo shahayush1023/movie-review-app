@@ -79,7 +79,13 @@ exports.verifyemail = async(req,res)=>{
   const jwttoken = jwt.sign({userId:user._id},process.env.JWT_SECRET);
 
   res.json({
-    user:{id:user._id,name:user.name,email:user.email,token:jwttoken,isVerified:user.isVerified} ,
+    user:{id:user._id,
+      name:user.name,
+      email:user.email,
+      token:jwttoken,
+      isVerified:user.isVerified,
+      role:user.role
+    } ,
     message :'your email is verified'
   });
 };
@@ -188,9 +194,9 @@ exports.signIn = async(req,res,next)=>{
     const matched = await user.comparePassword(password);
     if(!matched) return sendError(res,'Email/Passwrod mismatch')
  
-    const{_id, name,isVerified} = user
+    const{_id, name,role,isVerified} = user
     const jwttoken = jwt.sign({userId:user._id},process.env.JWT_SECRET)
-    res.json({user:{id:_id,name,email,token:jwttoken,isVerified}});
+    res.json({user:{id:_id,name,email,token:jwttoken,isVerified,role}});
    }
    catch(error){
     next(error.message);
