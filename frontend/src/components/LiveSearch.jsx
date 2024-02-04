@@ -11,10 +11,11 @@ export default function LiveSearch({
   inputStyle,
   renderItem = null,
   onChange = null,
-  onSelect = null,
+  onSelect = null,  
 }) {
   const [displaySearch, setDisplaySearch] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [defaultValue, setDefaultValue] = useState("");
 
   const handleOnFocus = () => {
     if (results.length) setDisplaySearch(true);
@@ -30,7 +31,10 @@ export default function LiveSearch({
   };
 
   const handleSelection = (selectedItem) => {
-    onSelect(selectedItem);
+    if (selectedItem) {
+      onSelect(selectedItem);
+      closeSearch();
+    }
   };
 
   const handleKeyDown = ({ key }) => {
@@ -45,6 +49,7 @@ export default function LiveSearch({
     if (key === "ArrowUp") {
       nextCount = (focusedIndex + results.length - 1) % results.length;
     }
+    if (key === "Escape") return closeSearch();
 
     if (key === "Enter") return handleSelection(results[focusedIndex]);
 
@@ -56,6 +61,21 @@ export default function LiveSearch({
       ? inputStyle
       : commonInputClasses + " border-2 rounded p-1 text-lg";
   };
+
+  useEffect(()=>{
+    if(results.length) return setDisplaySearch(true)
+    setDisplaySearch(false)
+  },[results.length]);
+
+
+  const handleChange = (e) => {
+    setDefaultValue(e.target.value);
+    onChange && onChange(e);
+  };
+
+  useEffect(() => {
+     setDefaultValue(value);
+  }, [value]);
 
   return (
     <div
@@ -71,8 +91,8 @@ export default function LiveSearch({
         className={getInputStyle()}
         placeholder={placeholder}
         onFocus={handleOnFocus}
-        value={value}
-        onChange={onChange}
+        value={defaultValue}
+        onChange={handleChange}
         // onBlur={handleOnBlur}
         // onKeyDown={handleKeyDown}
       />
@@ -128,7 +148,6 @@ const SearchResults = ({
         };
         return (
           <ResultCard
-            ref={index===focusedIndex ? resultContainer:null}
             key={index.toString()}
             item={result}
             renderItem={renderItem}

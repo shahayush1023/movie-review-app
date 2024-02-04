@@ -25,6 +25,7 @@ exports.uploadImageToCloud = async(file)=>{
         file.path,
         {gravity:"face",height:500,width:500,crop:"thumb"}
     );
+    console.log('in image to lcoud')
 
     return {url,public_id};
 };

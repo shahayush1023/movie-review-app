@@ -18,7 +18,6 @@ exports.create = async (req, res) => {
   //6 digit otp
   let otp = generateOTP();
 
-  //store inside our db
   const newEmailVerificationtoken = new Emailverificationtoken({
     owner:newUser._id,
     token:otp

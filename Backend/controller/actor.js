@@ -6,17 +6,22 @@ const cloudinary = require('../cloud');
 const { format } = require("morgan");
 
 exports.createActor = async (req, res) => {
-
-    const { name, about, gender } = req.body;
-    const { file } = req;
-    const newActor = new Actor({ name, about, gender });
-    if(file){
-      const {url,public_id} = await uploadImageToCloud(file.path);
-      newActor.avatar = {url,public_id};
-    }
-    await newActor.save();
-
-    res.status(201).json(formatActor(newActor));
+try{
+  const { name, about, gender } = req.body;
+  const { file } = req;
+  const newActor = new Actor({ name, about, gender });
+  console.log(file);
+  if(file){
+    const {url,public_id} = await uploadImageToCloud(file);
+    newActor.avatar = {url,public_id};
+  }
+  await newActor.save();
+  
+  res.status(201).json({actor: formatActor(newActor)});
+}
+catch(error){
+  console.log(error);
+}
 };
 
 
@@ -70,19 +75,20 @@ exports.removeActor = async (req, res) => {
   res.json({ message: "Record removed successfully." });
 };
 
-exports.searchActor = async (req,res)=>{
-  const{query} = req; 
-  const result = await Actor.find({$text:{$search:`"${query.name}"`}})
-  
-  const actors = result.map(actor=>formatActor(actor))
-  res.json(actors);
-}
+exports.searchActor = async (req, res) => {
+  const { query } = req;
+  const result = await Actor.find({ $text: { $search: `"${query.name}"` } });
+
+  const actors = result.map((actor) => formatActor(actor));
+
+  res.json({ results: actors });
+};
 
 exports.getLatestActors = async(req,res)=>{
   const result = await Actor.find().sort({createdAt:'-1'}).limit(10);
   
   const actors = result.map(actor=>formatActor(actor));
-  res.json(actors);
+  res.json({results:actors});
 }
 
 exports.getSingleActor = async(req,res)=>{

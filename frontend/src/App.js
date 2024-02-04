@@ -11,6 +11,7 @@ import NotFound from './components/NotFound';
 import { useAuth } from './hooks';
 import AdminNavigator from './navigator/AdminNavigator';
 
+
 export default function App() {
   const {authInfo} = useAuth();
   const isAdmin = authInfo.profile?.role === 'admin'; 
