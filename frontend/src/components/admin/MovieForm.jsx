@@ -1,28 +1,26 @@
 import React, { useState } from "react";
-import { useNotification, useSearch } from "../../hooks";
+import { useNotification } from "../../hooks";
 import {
   languageOptions,
   statusOptions,
   typeOptions,
 } from "../../utils/options";
 import { commonInputClasses } from "../../utils/theme";
+import { validateMovie } from "../../utils/validator";
+import DirectorSelector from "../DirectorSelector";
 import CastForm from "../form/CastForm";
 import Submit from "../form/Submit";
 import GenresSelector from "../GenresSelector";
+import Label from "../Label";
+import LabelWithBadge from "../LabelWithBadge";
 import CastModal from "../models/CastModal";
 import GenresModal from "../models/GenresModal";
 import WritersModal from "../models/WritersModal";
 import PosterSelector from "../PosterSelector";
 import Selector from "../Selector";
 import TagsInput from "../TagsInput";
-import Label from "../Label";
-import DirectorSelector from "../DirectorSelector";
+import ViewAllBtn from "../ViewAllButton";
 import WriterSelector from "../WriterSelector";
-import ViewAllButton from "../ViewAllButton";
-import LabelWithBadge from "../LabelWithBadge";
-import { validateMovie } from "../../utils/validator";
-
-
 
 const defaultMovieInfo = {
   title: "",
@@ -39,8 +37,7 @@ const defaultMovieInfo = {
   status: "",
 };
 
-
-export default function MovieForm({onSubmit}) {
+export default function MovieForm({ busy, onSubmit }) {
   const [movieInfo, setMovieInfo] = useState({ ...defaultMovieInfo });
   const [showWritersModal, setShowWritersModal] = useState(false);
   const [showCastModal, setShowCastModal] = useState(false);
@@ -48,13 +45,44 @@ export default function MovieForm({onSubmit}) {
   const [showGenresModal, setShowGenresModal] = useState(false);
 
   const { updateNotification } = useNotification();
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const{error} = validateMovie(movieInfo);
-    if(error) return updateNotification('error',error)
+    const { error } = validateMovie(movieInfo);
+    if (error) return updateNotification("error", error);
 
-    onSubmit(movieInfo)
-     // console.log(movieInfo);
+    // cast, tags, genres, writers
+    const { tags, genres, cast, writers, director, poster } = movieInfo;
+
+    const formData = new FormData();
+    const finalMovieInfo = {
+      ...movieInfo,
+    };
+
+    finalMovieInfo.tags = JSON.stringify(tags);
+    finalMovieInfo.genres = JSON.stringify(genres);
+
+    console.log(finalMovieInfo)
+    const finalCast = cast.map((c) => ({
+      actor: c.profile.id,
+      roleAs: c.roleAs,
+      leadActor: c.leadActor,
+    }));
+    finalMovieInfo.cast = JSON.stringify(finalCast);
+
+    if (writers.length) {
+      const finalWriters = writers.map((w) => w.id);
+      finalMovieInfo.writers = JSON.stringify(finalWriters);
+    }
+
+    if (director.id) finalMovieInfo.director = director.id;
+    if (poster) finalMovieInfo.poster = poster;
+
+    for (let key in finalMovieInfo) {
+      formData.append(key, finalMovieInfo[key]);
+    }
+
+    onSubmit(formData);
   };
 
   const updatePosterForUI = (file) => {
@@ -141,11 +169,9 @@ export default function MovieForm({onSubmit}) {
     setMovieInfo({ ...movieInfo, cast: [...newCast] });
   };
 
-
   const {
     title,
     storyLine,
-    director,
     writers,
     cast,
     tags,
@@ -192,21 +218,21 @@ export default function MovieForm({onSubmit}) {
             <TagsInput value={tags} name="tags" onChange={updateTags} />
           </div>
 
-          <DirectorSelector onSelect={updateDirector}/>
+          <DirectorSelector onSelect={updateDirector} />
 
-          <div>
+          <div className="">
             <div className="flex justify-between">
               <LabelWithBadge badge={writers.length} htmlFor="writers">
                 Writers
               </LabelWithBadge>
-              <ViewAllButton
+              <ViewAllBtn
                 onClick={displayWritersModal}
                 visible={writers.length}
               >
                 View All
-              </ViewAllButton>
+              </ViewAllBtn>
             </div>
-           <WriterSelector onSelect={updateWriters}/>
+            <WriterSelector onSelect={updateWriters} />
           </div>
 
           <div>
@@ -214,9 +240,9 @@ export default function MovieForm({onSubmit}) {
               <LabelWithBadge badge={cast.length}>
                 Add Cast & Crew
               </LabelWithBadge>
-              <ViewAllButton onClick={displayCastModal} visible={cast.length}>
+              <ViewAllBtn onClick={displayCastModal} visible={cast.length}>
                 View All
-              </ViewAllButton>
+              </ViewAllBtn>
             </div>
             <CastForm onSubmit={updateCast} />
           </div>
@@ -229,7 +255,12 @@ export default function MovieForm({onSubmit}) {
             value={releseDate}
           />
 
-          <Submit value="Upload" onClick={handleSubmit} type="button" />
+          <Submit
+            busy={busy}
+            value="Upload"
+            onClick={handleSubmit}
+            type="button"
+          />
         </div>
         <div className="w-[30%] space-y-5">
           <PosterSelector
@@ -287,8 +318,3 @@ export default function MovieForm({onSubmit}) {
     </>
   );
 }
-
-
-
-
-

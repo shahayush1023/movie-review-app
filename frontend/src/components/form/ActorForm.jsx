@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { ImSpinner3 } from "react-icons/im";
 import { useNotification } from "../../hooks";
 import { commonInputClasses } from "../../utils/theme";
 import PosterSelector from "../PosterSelector";
 import Selector from "../Selector";
-import {ImSpinner3} from 'react-icons/im';
 
 const defaultActorInfo = {
   name: "",
@@ -28,7 +28,13 @@ const validateActor = ({ avatar, name, about, gender }) => {
   return { error: null };
 };
 
-export default function ActorForm({ title, btnTitle, busy, onSubmit }) {
+export default function ActorForm({
+  title,
+  initialState,
+  btnTitle,
+  busy,
+  onSubmit,
+}) {
   const [actorInfo, setActorInfo] = useState({ ...defaultActorInfo });
   const [selectedAvatarForUI, setSelectedAvatarForUI] = useState("");
   const { updateNotification } = useNotification();
@@ -36,7 +42,6 @@ export default function ActorForm({ title, btnTitle, busy, onSubmit }) {
   const updatePosterForUI = (file) => {
     const url = URL.createObjectURL(file);
     setSelectedAvatarForUI(url);
-    
   };
 
   const handleChange = ({ target }) => {
@@ -55,12 +60,20 @@ export default function ActorForm({ title, btnTitle, busy, onSubmit }) {
     const { error } = validateActor(actorInfo);
     if (error) return updateNotification("error", error);
 
+    // submit form
     const formData = new FormData();
     for (let key in actorInfo) {
       if (key) formData.append(key, actorInfo[key]);
     }
     onSubmit(formData);
   };
+
+  useEffect(() => {
+    if (initialState) {
+      setActorInfo({ ...initialState, avatar: null });
+      setSelectedAvatarForUI(initialState.avatar);
+    }
+  }, [initialState]);
 
   const { name, about, gender } = actorInfo;
   return (
@@ -76,7 +89,7 @@ export default function ActorForm({ title, btnTitle, busy, onSubmit }) {
           className="h-8 w-24 bg-primary text-white dark:bg-white dark:text-primary hover:opacity-80 transition rounded flex items-center justify-center"
           type="submit"
         >
-          {busy? <ImSpinner3 className='animate-spin'/>:btnTitle}
+          {busy ? <ImSpinner3 className="animate-spin" /> : btnTitle}
         </button>
       </div>
 
